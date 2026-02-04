@@ -5,31 +5,8 @@
  * Randomness must use Web Crypto (crypto.getRandomValues).
  */
 
-const CONFUSING_CHARS = new Set([
-  "0",
-  "O",
-  "o",
-  "1",
-  "l",
-  "I",
-  "|",
-  "5",
-  "S",
-  "s",
-  "2",
-  "Z",
-  "z",
-  "6",
-  "G",
-  "9",
-  "q",
-  "8",
-  "B",
-]);
-
 const CHARSETS = {
-  lower: "abcdefghijklmnopqrstuvwxyz",
-  upper: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  letters: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
   digits: "0123456789",
   symbols: "!@#$%^&*()-_=+[]{};:,.?/~",
 };
@@ -50,21 +27,19 @@ function uniqueChars(str) {
   return Array.from(new Set(Array.from(str)));
 }
 
-function buildCategoryChars({ enabled, excludeSet, noConfusing }) {
+function buildCategoryChars({ enabled, excludeSet }) {
   /** @type {{key: string, label: string, chars: string[] }[]} */
   const categories = [];
 
   const add = (key, label, raw) => {
     if (!enabled[key]) return;
     let chars = Array.from(raw);
-    if (noConfusing) chars = chars.filter((c) => !CONFUSING_CHARS.has(c));
     if (excludeSet.size) chars = chars.filter((c) => !excludeSet.has(c));
     chars = uniqueChars(chars).sort(); // stable (not security relevant)
     categories.push({ key, label, chars });
   };
 
-  add("lower", "小写", CHARSETS.lower);
-  add("upper", "大写", CHARSETS.upper);
+  add("letters", "字母", CHARSETS.letters);
   add("digits", "数字", CHARSETS.digits);
   add("symbols", "符号", CHARSETS.symbols);
 
@@ -128,29 +103,15 @@ function formatBits(bits) {
   return bits.toFixed(1);
 }
 
-function validateConfig({ length, count, categories, allChars, requireEachCategory }) {
+function validateConfig({ length, count, categories, allChars }) {
   if (!categories.length) {
-    return { ok: false, message: "请至少选择一个字符集（小写/大写/数字/符号）。" };
+    return { ok: false, message: "请至少选择一个字符集（字母/数字/符号）。" };
   }
   if (!allChars.length) {
     return {
       ok: false,
-      message: "当前规则导致可用字符集为空（可能排除字符过多）。请调整规则或排除列表。",
+      message: "当前设置导致可用字符集为空（可能排除字符过多）。请调整排除列表或字符集选择。",
     };
-  }
-  if (requireEachCategory && length < categories.length) {
-    return {
-      ok: false,
-      message: `已开启“每类至少 1 个字符”，但长度为 ${length}，小于已选类别数 ${categories.length}。请增大长度或关闭该规则。`,
-    };
-  }
-  for (const cat of categories) {
-    if (requireEachCategory && cat.chars.length === 0) {
-      return {
-        ok: false,
-        message: `“${cat.label}”类别在当前排除规则下为空，无法满足“每类至少 1 个字符”。请取消该类别或调整排除规则。`,
-      };
-    }
   }
   if (count < 1 || count > 20) {
     return { ok: false, message: "数量范围为 1–20。" };
@@ -161,13 +122,10 @@ function validateConfig({ length, count, categories, allChars, requireEachCatego
   return { ok: true, message: "" };
 }
 
-function generateOne({ length, categories, allChars, requireEachCategory }) {
+function generateOne({ length, allChars }) {
   /** @type {string[]} */
   const out = [];
 
-  if (requireEachCategory) {
-    for (const cat of categories) out.push(pick(cat.chars));
-  }
   while (out.length < length) out.push(pick(allChars));
   shuffleInPlace(out);
   return out.join("");
@@ -293,22 +251,18 @@ function readConfig() {
   const count = clampInt(qs("count").value, 1, 20);
 
   const enabled = {
-    lower: qs("setLower").checked,
-    upper: qs("setUpper").checked,
+    letters: qs("setLetters").checked,
     digits: qs("setDigits").checked,
     symbols: qs("setSymbols").checked,
   };
 
-  const requireEachCategory = qs("ruleEachCategory").checked;
-  const noConfusing = qs("ruleNoConfusing").checked;
-
   const excludeRaw = String(qs("exclude").value ?? "");
   const excludeSet = new Set(Array.from(excludeRaw));
 
-  const categories = buildCategoryChars({ enabled, excludeSet, noConfusing });
+  const categories = buildCategoryChars({ enabled, excludeSet });
   const allChars = concatAllChars(categories);
 
-  return { length, count, enabled, requireEachCategory, noConfusing, excludeRaw, categories, allChars };
+  return { length, count, enabled, excludeRaw, categories, allChars };
 }
 
 function syncLengthUI(nextLength) {
@@ -357,7 +311,6 @@ function main() {
       count: cfg.count,
       categories: cfg.categories,
       allChars: cfg.allChars,
-      requireEachCategory: cfg.requireEachCategory,
     });
     if (!v.ok) {
       state.passwords = [];
@@ -374,9 +327,7 @@ function main() {
       passwords.push(
         generateOne({
           length: cfg.length,
-          categories: cfg.categories,
           allChars: cfg.allChars,
-          requireEachCategory: cfg.requireEachCategory,
         }),
       );
     }

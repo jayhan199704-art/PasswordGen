@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; object-src 'none'; frame-ancestors 'none';"
+    />
+    <meta name="referrer" content="no-referrer" />
+    <title>Password Forge - 密码生成器</title>
+    <meta
+      name="description"
+      content="本地生成强密码，不上传、不记录。支持长度、字符集、排除字符与强度提示。"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到主要内容</a>
+
+    <div class="bg" aria-hidden="true"></div>
+    <header class="container header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">PF</div>
+        <div>
+          <div class="title">Password Forge</div>
+          <div class="subtitle">本地生成强密码，不上传、不记录</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btnClear" class="btn btn-ghost" type="button">
+          清空结果
+        </button>
+      </div>
+    </header>
+
+    <main id="main" class="container main">
+      <section class="panel">
+        <h2 class="h2">生成设置</h2>
+
+        <div class="grid">
+          <div class="field">
+            <label for="length">长度</label>
+            <div class="row">
+              <input
+                id="length"
+                name="length"
+                type="range"
+                min="8"
+                max="128"
+                value="16"
+              />
+              <input
+                id="lengthNumber"
+                name="lengthNumber"
+                class="num"
+                type="number"
+                min="8"
+                max="128"
+                value="16"
+                inputmode="numeric"
+              />
+            </div>
+            <div class="hint">建议 16+（常见网站可用）；支持 8–128。</div>
+          </div>
+
+          <div class="field">
+            <label for="count">数量</label>
+            <div class="row">
+              <input
+                id="count"
+                name="count"
+                class="num"
+                type="number"
+                min="1"
+                max="20"
+                value="1"
+                inputmode="numeric"
+              />
+              <div class="spacer"></div>
+            </div>
+            <div class="hint">一次最多生成 20 条。</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <span>字符集</span>
+          </div>
+          <div class="chips" role="group" aria-label="字符集选择">
+            <label class="chip">
+              <input id="setLower" type="checkbox" checked />
+              <span>小写 a-z</span>
+            </label>
+            <label class="chip">
+              <input id="setUpper" type="checkbox" checked />
+              <span>大写 A-Z</span>
+            </label>
+            <label class="chip">
+              <input id="setDigits" type="checkbox" checked />
+              <span>数字 0-9</span>
+            </label>
+            <label class="chip">
+              <input id="setSymbols" type="checkbox" checked />
+              <span>符号</span>
+            </label>
+          </div>
+          <div class="hint">
+            符号集合默认：<code>!@#$%^&*()-_=+[]{};:,.?/~</code>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <span>规则</span>
+          </div>
+          <div class="toggles">
+            <label class="toggle">
+              <input id="ruleEachCategory" type="checkbox" checked />
+              <span>每个已选类别至少 1 个字符</span>
+            </label>
+            <label class="toggle">
+              <input id="ruleNoConfusing" type="checkbox" checked />
+              <span>排除易混淆字符（O/0、l/1、I 等）</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="exclude">排除自定义字符（可选）</label>
+          <input
+            id="exclude"
+            name="exclude"
+            type="text"
+            placeholder="例如：\"'\\`  或  abc"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <div class="hint">输入的每一个字符都会从可用字符集中移除。</div>
+        </div>
+
+        <div class="actions">
+          <button id="btnGenerate" class="btn btn-primary" type="button">
+            生成密码
+          </button>
+          <button id="btnCopyAll" class="btn" type="button" disabled>
+            复制全部
+          </button>
+        </div>
+
+        <div class="note">
+          <div class="note-title">隐私说明</div>
+          <ul class="note-list">
+            <li>密码在你的浏览器本地生成；本页面不上传、不保存密码明文。</li>
+            <li>复制后请注意剪贴板可能被其他应用读取，建议尽快粘贴。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="h2">生成结果</h2>
+          <div class="strength" aria-live="polite">
+            <span class="badge" id="strengthBadge">—</span>
+            <span class="muted" id="strengthDetail">等待生成</span>
+          </div>
+        </div>
+
+        <div id="alert" class="alert" role="alert" hidden></div>
+        <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+        <div class="results">
+          <div class="results-head">
+            <div class="muted" id="resultsMeta">暂无结果</div>
+            <label class="toggle">
+              <input id="showPasswords" type="checkbox" />
+              <span>显示明文</span>
+            </label>
+          </div>
+
+          <ul id="resultsList" class="list" aria-label="密码结果列表"></ul>
+        </div>
+
+        <footer class="footer">
+          <span class="muted"
+            >提示：强度为估算结果，建议配合密码管理器与 2FA 使用。</span
+          >
+        </footer>
+      </section>
+    </main>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
+

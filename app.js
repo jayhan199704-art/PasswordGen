@@ -103,7 +103,7 @@ function formatBits(bits) {
   return bits.toFixed(1);
 }
 
-function validateConfig({ length, count, categories, allChars }) {
+function validateConfig({ length, categories, allChars }) {
   if (!categories.length) {
     return { ok: false, message: "请至少选择一个字符集（字母/数字/符号）。" };
   }
@@ -112,9 +112,6 @@ function validateConfig({ length, count, categories, allChars }) {
       ok: false,
       message: "当前设置导致可用字符集为空（可能排除字符过多）。请调整排除列表或字符集选择。",
     };
-  }
-  if (count < 1 || count > 20) {
-    return { ok: false, message: "数量范围为 1–20。" };
   }
   if (length < 8 || length > 128) {
     return { ok: false, message: "长度范围为 8–128。" };
@@ -191,7 +188,6 @@ function renderResults({
   const meta = qs("resultsMeta");
   const badge = qs("strengthBadge");
   const detail = qs("strengthDetail");
-  const btnCopyAll = qs("btnCopyAll");
 
   list.innerHTML = "";
   if (!passwords.length) {
@@ -199,7 +195,6 @@ function renderResults({
     badge.className = "badge";
     badge.textContent = "—";
     detail.textContent = "等待生成";
-    btnCopyAll.disabled = true;
     return;
   }
 
@@ -207,7 +202,6 @@ function renderResults({
   badge.className = `badge ${strength.cls}`;
   badge.textContent = strength.level;
   detail.textContent = strengthDetail;
-  btnCopyAll.disabled = false;
 
   passwords.forEach((pw, idx) => {
     const li = document.createElement("li");
@@ -248,7 +242,6 @@ function renderResults({
 
 function readConfig() {
   const length = clampInt(qs("lengthNumber").value, 8, 128);
-  const count = clampInt(qs("count").value, 1, 20);
 
   const enabled = {
     letters: qs("setLetters").checked,
@@ -256,13 +249,12 @@ function readConfig() {
     symbols: qs("setSymbols").checked,
   };
 
-  const excludeRaw = String(qs("exclude").value ?? "");
-  const excludeSet = new Set(Array.from(excludeRaw));
+  const excludeSet = new Set();
 
   const categories = buildCategoryChars({ enabled, excludeSet });
   const allChars = concatAllChars(categories);
 
-  return { length, count, enabled, excludeRaw, categories, allChars };
+  return { length, enabled, categories, allChars };
 }
 
 function syncLengthUI(nextLength) {
@@ -277,7 +269,6 @@ function main() {
   const toast = createToast();
 
   const btnGenerate = qs("btnGenerate");
-  const btnCopyAll = qs("btnCopyAll");
   const btnClear = qs("btnClear");
   const showPasswords = qs("showPasswords");
   const list = qs("resultsList");
@@ -304,11 +295,9 @@ function main() {
 
     const cfg = readConfig();
     syncLengthUI(cfg.length);
-    qs("count").value = String(cfg.count);
 
     const v = validateConfig({
       length: cfg.length,
-      count: cfg.count,
       categories: cfg.categories,
       allChars: cfg.allChars,
     });
@@ -322,15 +311,12 @@ function main() {
       return;
     }
 
-    const passwords = [];
-    for (let i = 0; i < cfg.count; i++) {
-      passwords.push(
-        generateOne({
-          length: cfg.length,
-          allChars: cfg.allChars,
-        }),
-      );
-    }
+    const passwords = [
+      generateOne({
+        length: cfg.length,
+        allChars: cfg.allChars,
+      }),
+    ];
 
     const bits = estimateEntropyBits(cfg.length, cfg.allChars.length);
     const strength = strengthFromEntropy(bits);
@@ -369,16 +355,6 @@ function main() {
   });
 
   showPasswords.addEventListener("change", () => rerender());
-
-  btnCopyAll.addEventListener("click", async () => {
-    try {
-      if (!state.passwords.length) return;
-      await writeClipboard(state.passwords.join("\n"));
-      toast.show("已复制全部");
-    } catch {
-      toast.show("复制失败（可能被浏览器拦截）");
-    }
-  });
 
   list.addEventListener("click", async (e) => {
     const target = /** @type {HTMLElement} */ (e.target);

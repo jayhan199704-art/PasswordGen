@@ -129,16 +129,8 @@ body {
 }
 
 .main {
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 16px;
+  display: block;
   padding: 10px 0 26px;
-}
-
-@media (max-width: 920px) {
-  .main {
-    grid-template-columns: 1fr;
-  }
 }
 
 .panel {

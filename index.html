@@ -37,7 +37,13 @@
 
     <main id="main" class="container main">
       <section class="panel">
-        <h2 class="h2">生成设置</h2>
+        <div class="panel-head">
+          <h2 class="h2">生成设置</h2>
+          <div class="strength" aria-live="polite">
+            <span class="badge" id="strengthBadge">—</span>
+            <span class="muted" id="strengthDetail">等待生成</span>
+          </div>
+        </div>
 
         <div class="grid">
           <div class="field">
@@ -64,24 +70,6 @@
             </div>
             <div class="hint">建议 16+（常见网站可用）；支持 8–128。</div>
           </div>
-
-          <div class="field">
-            <label for="count">数量</label>
-            <div class="row">
-              <input
-                id="count"
-                name="count"
-                class="num"
-                type="number"
-                min="1"
-                max="20"
-                value="1"
-                inputmode="numeric"
-              />
-              <div class="spacer"></div>
-            </div>
-            <div class="hint">一次最多生成 20 条。</div>
-          </div>
         </div>
 
         <div class="field">
@@ -107,25 +95,9 @@
           </div>
         </div>
 
-        <div class="field">
-          <label for="exclude">排除自定义字符（可选）</label>
-          <input
-            id="exclude"
-            name="exclude"
-            type="text"
-            placeholder="例如：\"'\\`  或  abc"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <div class="hint">输入的每一个字符都会从可用字符集中移除。</div>
-        </div>
-
         <div class="actions">
           <button id="btnGenerate" class="btn btn-primary" type="button">
             生成密码
-          </button>
-          <button id="btnCopyAll" class="btn" type="button" disabled>
-            复制全部
           </button>
         </div>
 
@@ -135,16 +107,6 @@
             <li>密码在你的浏览器本地生成；本页面不上传、不保存密码明文。</li>
             <li>复制后请注意剪贴板可能被其他应用读取，建议尽快粘贴。</li>
           </ul>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head">
-          <h2 class="h2">生成结果</h2>
-          <div class="strength" aria-live="polite">
-            <span class="badge" id="strengthBadge">—</span>
-            <span class="muted" id="strengthDetail">等待生成</span>
-          </div>
         </div>
 
         <div id="alert" class="alert" role="alert" hidden></div>
